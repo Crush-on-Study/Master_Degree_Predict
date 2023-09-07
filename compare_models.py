@@ -1,87 +1,99 @@
-import pandas as pd
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from sklearn.neural_network import MLPClassifier
+# 앙상블 : 소프트 보팅 (의사 결정 트리 , 랜덤 포레스트)
 
-# 전처리된 데이터 가져오기 (데이터 파일 이름에 따라 변경)
+from joblib import dump,load
+from random_forest import best_random_forest_model
+from decision import best_model
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+
+# 전처리된 데이터 가져오기
 data = pd.read_excel('processed_data.xlsx')
 
-# 특성 선택 (gre, gpa, rank)
-input_data = data[['gre', 'gpa', 'rank']]
+# 특성과 타겟 변수 선택
+X = data[['gre', 'gpa']]
+y = data['admit']
 
-# 각 모델 초기화
-logistic_model = LogisticRegression()
-decision_tree_model = DecisionTreeClassifier()
-random_forest_model = RandomForestClassifier()
-svm_model = SVC(probability=True)
-mlp_model = MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=1000)
+# 데이터 분할 (학습 데이터와 테스트 데이터)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 각 모델에 입력 데이터 제공하여 학습
-logistic_model.fit(input_data, data['admit'])
-decision_tree_model.fit(input_data, data['admit'])
-random_forest_model.fit(input_data, data['admit'])
-svm_model.fit(input_data, data['admit'])
-mlp_model.fit(input_data, data['admit'])
 
-# 각 모델의 예측 결과 계산
-logistic_admit = logistic_model.predict(input_data)
-decision_tree_admit = decision_tree_model.predict(input_data)
-random_forest_admit = random_forest_model.predict(input_data)
-svm_admit = svm_model.predict(input_data)
-mlp_admit = mlp_model.predict(input_data)
+# 의사 결정 트리 모델 저장
+dump(best_model, 'decision.joblib')
 
-# 각 모델의 신뢰도 확인
-logistic_proba = logistic_model.predict_proba(input_data)
-decision_tree_proba = decision_tree_model.predict_proba(input_data)
-random_forest_proba = random_forest_model.predict_proba(input_data)
-svm_proba = svm_model.predict_proba(input_data)
-mlp_proba = mlp_model.predict_proba(input_data)
+# 랜덤 포레스트 모델 저장
+dump(best_random_forest_model, 'random_forest.joblib')
 
-# 각 모델의 예측 결과 출력
-print("로지스틱 회귀 모델 예측 결과 (admit):", logistic_admit)
-print("결정 트리 모델 예측 결과 (admit):", decision_tree_admit)
-print("랜덤 포레스트 모델 예측 결과 (admit):", random_forest_admit)
-print("서포트 벡터 머신 (SVM) 모델 예측 결과 (admit):", svm_admit)
-print("신경망 (Neural Network) 모델 예측 결과 (admit):", mlp_admit)
+# 의사 결정 트리 모델 불러오기
+decision_tree_model = load('decision.joblib')
 
-# 각 모델의 신뢰도 출력
-print("\n로지스틱 회귀 모델 신뢰도:\n", logistic_proba)
-print("결정 트리 모델 신뢰도:\n", decision_tree_proba)
-print("랜덤 포레스트 모델 신뢰도:\n", random_forest_proba)
-print("서포트 벡터 머신 (SVM) 모델 신뢰도:\n", svm_proba)
-print("신경망 (Neural Network) 모델 신뢰도:\n", mlp_proba)
+# 랜덤 포레스트 모델 불러오기
+random_forest_model = load('random_forest.joblib')
 
-# 이제 여기다가 본인 스펙 넣으세요
-def input_your_data():
-    # 추가로 입력 데이터를 설정하고 각 모델에 입력한 후 예측 결과를 확인하는 코드 추가
-    input_data = [[0, 3.64, 1]]  # 원하는 값을 넣기
+# 의사 결정 트리 모델의 예측 확률
+y_prob_decision_tree = best_model.predict_proba(X_test)
 
-    # 각 모델의 예측 결과 계산
-    logistic_admit = logistic_model.predict(input_data)
-    decision_tree_admit = decision_tree_model.predict(input_data)
-    random_forest_admit = random_forest_model.predict(input_data)
-    svm_admit = svm_model.predict(input_data)
-    mlp_admit = mlp_model.predict(input_data)
+# 랜덤 포레스트 모델의 예측 확률
+y_prob_random_forest = best_random_forest_model.predict_proba(X_test)
 
-    # 각 모델의 신뢰도 확인
-    logistic_proba = logistic_model.predict_proba(input_data)
-    decision_tree_proba = decision_tree_model.predict_proba(input_data)
-    random_forest_proba = random_forest_model.predict_proba(input_data)
-    svm_proba = svm_model.predict_proba(input_data)
-    mlp_proba = mlp_model.predict_proba(input_data)
 
-    # 각 모델의 예측 결과 출력
-    print("\n로지스틱 회귀 모델 예측 결과 (admit):", logistic_admit)
-    print("결정 트리 모델 예측 결과 (admit):", decision_tree_admit)
-    print("랜덤 포레스트 모델 예측 결과 (admit):", random_forest_admit)
-    print("서포트 벡터 머신 (SVM) 모델 예측 결과 (admit):", svm_admit)
-    print("신경망 (Neural Network) 모델 예측 결과 (admit):", mlp_admit)
+import numpy as np
 
-    # 각 모델의 신뢰도 출력
-    print("\n로지스틱 회귀 모델 신뢰도:\n", logistic_proba)
-    print("결정 트리 모델 신뢰도:\n", decision_tree_proba)
-    print("랜덤 포레스트 모델 신뢰도:\n", random_forest_proba)
-    print("서포트 벡터 머신 (SVM) 모델 신뢰도:\n", svm_proba)
-    print("신경망 (Neural Network) 모델 신뢰도:\n", mlp_proba)
+# 의사 결정 트리와 랜덤 포레스트 모델의 예측 확률 평균 계산
+y_prob_combined = (y_prob_decision_tree + y_prob_random_forest) / 2
+
+# 평균 확률 중에서 가장 높은 클래스 선택
+y_pred_combined = np.argmax(y_prob_combined, axis=1)
+
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+# 각 개별 모델의 예측
+y_pred_decision_tree = decision_tree_model.predict(X_test)
+y_pred_random_forest = random_forest_model.predict(X_test)
+
+# 각 개별 모델의 성능 평가
+accuracy_decision_tree = accuracy_score(y_test, y_pred_decision_tree)
+accuracy_random_forest = accuracy_score(y_test, y_pred_random_forest)
+
+# 앙상블 모델의 예측 (소프트 투표)
+y_pred_ensemble = (y_pred_decision_tree + y_pred_random_forest) // 2
+
+# 앙상블 모델의 성능 평가
+accuracy_ensemble = accuracy_score(y_test, y_pred_ensemble)
+
+# 각 모델의 혼동 행렬 출력
+conf_matrix_decision_tree = confusion_matrix(y_test, y_pred_decision_tree)
+conf_matrix_random_forest = confusion_matrix(y_test, y_pred_random_forest)
+conf_matrix_ensemble = confusion_matrix(y_test, y_pred_ensemble)
+
+# 결과 출력
+print("Decision Tree Model Accuracy:", accuracy_decision_tree)
+print("Random Forest Model Accuracy:", accuracy_random_forest)
+print("Ensemble Model Accuracy:", accuracy_ensemble)
+
+# 혼동 행렬 시각화
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(18, 6))
+
+plt.subplot(131)
+sns.heatmap(conf_matrix_decision_tree, annot=True, fmt="d", cmap="Blues", cbar=False)
+plt.title("Decision Tree Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+
+plt.subplot(132)
+sns.heatmap(conf_matrix_random_forest, annot=True, fmt="d", cmap="Blues", cbar=False)
+plt.title("Random Forest Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+
+plt.subplot(133)
+sns.heatmap(conf_matrix_ensemble, annot=True, fmt="d", cmap="Blues", cbar=False)
+plt.title("Ensemble Model Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+
+plt.tight_layout()
+plt.show()
