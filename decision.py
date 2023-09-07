@@ -14,12 +14,55 @@ y = data['admit']
 # 데이터 분할 (학습 데이터와 테스트 데이터)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 결정 트리 모델 초기화 및 학습
-decision_tree_model = DecisionTreeClassifier()
-decision_tree_model.fit(X_train, y_train)
+# 초기값 설정
+best_accuracy = 0.0
+best_params = None
+
+# 하이퍼파라미터 그리드 설정
+max_depth_values = [None, 10, 20, 30]
+min_samples_split_values = [2, 5, 10]
+min_samples_leaf_values = [1, 2, 4]
+
+# 모든 하이퍼파라미터 조합 반복
+for max_depth in max_depth_values:
+    for min_samples_split in min_samples_split_values:
+        for min_samples_leaf in min_samples_leaf_values:
+            # 결정 트리 모델 초기화
+            decision_tree_model = DecisionTreeClassifier(
+                max_depth=max_depth,
+                min_samples_split=min_samples_split,
+                min_samples_leaf=min_samples_leaf
+            )
+            # 모델 학습
+            decision_tree_model.fit(X_train, y_train)
+            # 테스트 데이터로 예측
+            y_pred = decision_tree_model.predict(X_test)
+            # 정확도 계산
+            accuracy = accuracy_score(y_test, y_pred)
+            # 현재 조합의 정확도가 최고 정확도보다 높으면 업데이트
+            if accuracy > best_accuracy:
+                best_accuracy = accuracy
+                best_params = {
+                    'max_depth': max_depth,
+                    'min_samples_split': min_samples_split,
+                    'min_samples_leaf': min_samples_leaf
+                }
+
+# 최적 하이퍼파라미터 및 최고 정확도 출력
+print("Best Hyperparameters:")
+print(best_params)
+print(f'Best Accuracy: {best_accuracy}')
+
+# 최적 하이퍼파라미터로 모델 초기화 및 학습
+best_model = DecisionTreeClassifier(
+    max_depth=best_params['max_depth'],
+    min_samples_split=best_params['min_samples_split'],
+    min_samples_leaf=best_params['min_samples_leaf']
+)
+best_model.fit(X_train, y_train)
 
 # 테스트 데이터로 예측
-y_pred = decision_tree_model.predict(X_test)
+y_pred = best_model.predict(X_test)
 
 # 모델 평가
 accuracy = accuracy_score(y_test, y_pred)
@@ -27,9 +70,15 @@ conf_matrix = confusion_matrix(y_test, y_pred)
 classification_rep = classification_report(y_test, y_pred)
 
 # ROC 곡선 및 AUC 계산
-y_prob = decision_tree_model.predict_proba(X_test)[:, 1]
+y_prob = best_model.predict_proba(X_test)[:, 1]
 fpr, tpr, thresholds = roc_curve(y_test, y_prob)
 roc_auc = auc(fpr, tpr)
+
+# 결과 데이터 출력
+print("\nDecision Tree Model (Best Hyperparameters):")
+print(f'Accuracy: {accuracy}')
+print(f'Confusion Matrix:\n{conf_matrix}')
+print(f'Classification Report:\n{classification_rep}')
 
 # 시각화: ROC 곡선 그래프
 plt.figure(figsize=(8, 6))
@@ -42,8 +91,3 @@ plt.ylabel('True Positive Rate')
 plt.title('Receiver Operating Characteristic (ROC) Curve (Decision Tree)')
 plt.legend(loc='lower right')
 plt.show()
-
-print("Decision Tree Model:")
-print(f'Accuracy: {accuracy}')
-print(f'Confusion Matrix:\n{conf_matrix}')
-print(f'Classification Report:\n{classification_rep}')
